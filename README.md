@@ -52,5 +52,5 @@ Kernel demo (propose → approve):
 | 2 | News + daily digest | ✅ done — 8 sources (RSS + HTML newsroom), dedupe + scoring, LLM-seasoned digest with one suggested action |
 | 3 | Vault + gifts + travel | ✅ done — vault (FTS, human-wins), gift lifecycle + Sunday review, travel brainstorm (LLM-seasoned or deterministic) |
 | 4 | Calendar steward (ICS now, Google later) | ✅ done — ICS backend (human edits survive daemon writes), `plp calendar week/add/rm/connect`, propose→approve→ICS (audited), Google OAuth scaffold (fallback to ICS) |
-| 5 | Scorecard + weekly checkup | pending |
+| 5 | Scorecard + weekly checkup | ✅ done — weekly hours per goal category (calendar is the spine), 26-week trends, deterministic floor + LLM seasoning (narrow 6-tool mount, strict JSON, one retry, forced final), data-driven wins/drift, 2–3 approvable calendar proposals, human-editable `plp-vault/goals.md`; live-verified on CPU Qwen |
 | 6 | Email scanner (Gmail) | pending |

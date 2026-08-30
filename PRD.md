@@ -1,6 +1,6 @@
 # PersonalLifePlanner (PLP) — Product Requirements & Architecture
 
-**Status:** v1.0 — workshop complete, direction approved · build: Phase 4 done (2026-08-30) — calendar spine: ICS backend (RFC 5545 subset, human edits survive daemon writes), Google OAuth scaffold (inert until configured, ICS fallback), propose→approve→ICS audited end-to-end, `plp calendar week|add|rm|connect`; travel feasibility now conflict-checks the calendar; 159 tests green · next: Phase 5 scorecard + weekly checkup
+**Status:** v1.0 — workshop complete, direction approved · build: Phase 5 done (2026-08-30) — life scorecard (per-week hours per goal category + vault activity, 26-week trends in the state DB), Sunday 20:00 checkup with deterministic floor + LLM seasoning (narrow 6-tool mount, strict JSON, one retry, forced final answer), data-driven wins/drift and 2–3 approvable calendar proposals (slot nudging around conflicts); `plp scorecard week|checkup|goals|onboarding`, human-editable `goals.md` in the vault; live LLM-seasoned checkup verified on CPU Qwen (4 LLM calls, ~3.6 min, well under the 900 s job timeout); 184 tests green · next: Phase 6 email scanner
 **Location:** `/home/mattma/PersonalLifePlanner`
 **Stack:** Python 3.13 · local-first · self-hosted LLM (Qwen 3.8 27B, OpenAI-compatible endpoint)
 
