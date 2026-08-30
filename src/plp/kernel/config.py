@@ -74,6 +74,24 @@ class NewsConfig(BaseModel):
     sources: list[NewsSourceCfg] = Field(default_factory=list)
 
 
+class OccasionCfg(BaseModel):
+    """A recurring date the gifts review tracks (``day`` may not exist in some
+    years — those occurrences are skipped)."""
+
+    name: str
+    month: int = Field(ge=1, le=12)
+    day: int = Field(ge=1, le=31)
+
+
+class GiftsConfig(BaseModel):
+    """Gift vault (Phase 3). Gift records live in the vault; occasions are
+    calendar dates (config-driven, collected via the onboarding interview)."""
+
+    review_window_days: int = Field(default=90, ge=1, le=365)
+    stale_after_days: int = Field(default=30, ge=1)
+    occasions: list[OccasionCfg] = Field(default_factory=list)
+
+
 class PlpConfig(BaseModel):
     llm: LLMConfig = Field(default_factory=LLMConfig)
     timezone: str = ""
@@ -84,6 +102,7 @@ class PlpConfig(BaseModel):
     schedules: dict[str, str] = Field(default_factory=dict)
     features: FeaturesConfig = Field(default_factory=FeaturesConfig)
     news: NewsConfig = Field(default_factory=NewsConfig)
+    gifts: GiftsConfig = Field(default_factory=GiftsConfig)
     # Set by load_config(): the project root (<root>/config/plp.yaml).
     root: Path = Field(default=Path("."))
 

@@ -54,3 +54,14 @@ news:
   sources: []
 #  sources:
 #    - {name: "Example Blog", url: "https://example.com/feed", kind: rss, weight: 1.0}
+
+# Gift vault (Phase 3). Gifts are captured with `plp gift add "..."` and live
+# in plp-vault/gifts/. `occasions` are the recurring dates the Sunday review
+# watches — fill these in (her birthday, your anniversary, ...).
+gifts:
+  review_window_days: 90     # how far ahead the review looks for occasions
+  stale_after_days: 30       # an 'idea' this old is called out for a decision
+  occasions: []
+#  occasions:
+#    - {name: "her birthday", month: 6, day: 2}
+#    - {name: "anniversary", month: 7, day: 20}
