@@ -41,3 +41,16 @@ schedules: {}
 # Delivery of LLM features that are off by default.
 features:
   email_summarization: false   # let the LLM summarize email threads (off = local-only triage)
+
+# News collector (Phase 2). Leave `sources` empty to use the built-in
+# AI-focused list (OpenAI, Anthropic, Google DeepMind, Google Research,
+# Hugging Face, arXiv cs.LG, Hacker News, r/LocalLLaMA); any sources listed
+# here replace the built-ins wholesale.
+news:
+  max_age_hours: 72
+  per_source_limit: 25
+  digest_max_items: 8
+  digest_window_hours: 48
+  sources: []
+#  sources:
+#    - {name: "Example Blog", url: "https://example.com/feed", kind: rss, weight: 1.0}

@@ -5,8 +5,13 @@
     plp runs [--limit N]                                 recent runs (audit)
     plp plugins                                          plugin registry state
     plp approve <id> [--reject] [--note TEXT]            resolve a proposal
-    plp chat                                             (Phase 3/5)
-    plp calendar                                         (Phase 4)
+    plp chat                                             (Phase 5 stub)
+    plp calendar                                         (Phase 4 stub)
+
+Plugins may register their own commands (``Plugin.commands``), surfaced as
+extra subcommands after discovery — e.g. ``plp news`` from the news plugin.
+A plugin command never shadows a static one; static stubs win until the real
+feature lands in its build phase.
 """
 
 from __future__ import annotations
@@ -20,11 +25,15 @@ import sys
 
 from . import __version__
 from .kernel.config import ConfigError, load_config
+from .kernel.runtime import build_runtime
 
 STUB_PHASES = {
     "chat": 5,
     "calendar": 4,
 }
+
+#: Static subcommand names; plugin commands may not shadow these.
+STATIC_COMMANDS = {"daemon", "run", "runs", "plugins", "approve", "chat", "calendar"}
 
 
 def _config_path(args) -> str:
@@ -36,10 +45,13 @@ def _config_path(args) -> str:
     return "config/plp.yaml"
 
 
-def _build(args):
-    from .kernel.runtime import build_runtime
-
-    return build_runtime(load_config(_config_path(args)))
+def _config_path_from_argv(argv: list[str]) -> str:
+    """Config path pre-parse (main() loads the runtime before argparse sees
+    plugin-registered subcommands, so the flag is extracted by scanning)."""
+    for i, tok in enumerate(argv):
+        if tok == "--config" and i + 1 < len(argv):
+            return argv[i + 1]
+    return os.environ.get("PLP_CONFIG") or "config/plp.yaml"
 
 
 def _report_boot(rt) -> None:
@@ -70,11 +82,43 @@ def _report_boot(rt) -> None:
     )
 
 
+def _wire_plugin_commands(parser: argparse.ArgumentParser, rt) -> dict:
+    """Register plugin-provided commands as subparsers; returns {name: Command}."""
+    sub = next(
+        a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
+    )
+    registered: dict[str, object] = {}
+    for lp in rt.plugins:
+        for c in lp.commands:
+            if c.name in sub.choices:  # static commands/stubs win
+                continue
+            sp = sub.add_parser(c.name, help=c.help or c.name)
+            if c.add_arguments:
+                c.add_arguments(sp)
+            registered[c.name] = c
+    return registered
+
+
+def _plugin_command_ctx(rt, name: str):
+    from .kernel.capability import Capability
+    from .kernel.context import PluginContext
+
+    return PluginContext(
+        store=rt.store,
+        bus=rt.bus,
+        config=rt.config,
+        delivery=rt.delivery,
+        capability=Capability.permissive(rt.config.llm.max_tool_steps),
+        approvals=rt.approvals,
+        host=rt.host,
+        job_name=f"cmd.{name}",
+    )
+
+
 # ----------------------------------------------------------------- commands
 
 
-def _cmd_daemon(args) -> int:
-    rt = _build(args)
+def _cmd_daemon(rt, args) -> int:
     _report_boot(rt)
     if args.once:
         fired = rt.scheduler.tick()
@@ -99,8 +143,7 @@ def _cmd_daemon(args) -> int:
     return 0
 
 
-def _cmd_run(args) -> int:
-    rt = _build(args)
+def _cmd_run(rt, args) -> int:
     _report_boot(rt)
     kwargs: dict = {}
     if args.args:
@@ -127,13 +170,8 @@ def _cmd_run(args) -> int:
     return 0 if result["status"] == "ok" else 1
 
 
-def _cmd_runs(args) -> int:
-    from .kernel.config import resolve
-    from .kernel.store import Store
-
-    cfg = load_config(_config_path(args))
-    store = Store(resolve(cfg, cfg.state_db.path))
-    rows = store.recent_runs(args.limit)
+def _cmd_runs(rt, args) -> int:
+    rows = rt.store.recent_runs(args.limit)
     if not rows:
         print("(no runs recorded yet)")
         return 0
@@ -147,8 +185,7 @@ def _cmd_runs(args) -> int:
     return 0
 
 
-def _cmd_plugins(args) -> int:
-    rt = _build(args)
+def _cmd_plugins(rt, args) -> int:
     print(f"{'PLUGIN':<16} {'STATE':<8} {'JOBS':<40} TOOLS")
     for lp in rt.plugins:
         jobs = ", ".join(sorted(lp.jobs_by_name)) or "-"
@@ -161,8 +198,7 @@ def _cmd_plugins(args) -> int:
     return 0
 
 
-def _cmd_approve(args) -> int:
-    rt = _build(args)
+def _cmd_approve(rt, args) -> int:
     expired = rt.approvals.expire_stale()
     if expired:
         print(f"(expired {expired} stale proposal(s))", file=sys.stderr)
@@ -233,27 +269,59 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:]) if argv is None else list(argv)
     parser = build_parser()
-    args = parser.parse_args(argv)
+
+    # Fast paths that must work without a config file present.
+    if not argv:
+        parser.print_help()
+        return 0
+    if argv[0] in ("-h", "--help"):
+        parser.print_help()
+        return 0
+    if argv[0] == "--version":
+        parser.parse_args(argv)  # prints version, raises SystemExit(0)
+        return 0
+
+    verbose = any(t in ("-v", "--verbose") for t in argv)
     logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
+        level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
         stream=sys.stderr,
     )
+
+    try:
+        rt = build_runtime(load_config(_config_path_from_argv(argv)))
+        plugin_cmds = _wire_plugin_commands(parser, rt)
+        args = parser.parse_args(argv)
+    except ConfigError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
     if not args.command:
         parser.print_help()
         return 0
+
     try:
+        if args.command in plugin_cmds:
+            cmd = plugin_cmds[args.command]
+            if cmd.handler is None:
+                print(
+                    f"plp {args.command}: plugin command has no handler",
+                    file=sys.stderr,
+                )
+                return 2
+            return cmd.handler(args, _plugin_command_ctx(rt, args.command))
         if args.command == "daemon":
-            return _cmd_daemon(args)
+            return _cmd_daemon(rt, args)
         if args.command == "run":
-            return _cmd_run(args)
+            return _cmd_run(rt, args)
         if args.command == "runs":
-            return _cmd_runs(args)
+            return _cmd_runs(rt, args)
         if args.command == "plugins":
-            return _cmd_plugins(args)
+            return _cmd_plugins(rt, args)
         if args.command == "approve":
-            return _cmd_approve(args)
+            return _cmd_approve(rt, args)
         return _cmd_stub(args)
     except ConfigError as exc:
         print(f"error: {exc}", file=sys.stderr)

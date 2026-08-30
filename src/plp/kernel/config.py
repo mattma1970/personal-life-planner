@@ -57,6 +57,23 @@ class FeaturesConfig(BaseModel):
     email_summarization: bool = False
 
 
+class NewsSourceCfg(BaseModel):
+    name: str
+    url: str
+    kind: str = "rss"  # rss | html
+    weight: float = 1.0
+
+
+class NewsConfig(BaseModel):
+    """News collector (Phase 2). ``sources`` empty → built-in AI-focused list."""
+
+    max_age_hours: float = 72.0
+    per_source_limit: int = 25
+    digest_max_items: int = 8
+    digest_window_hours: float = 48.0
+    sources: list[NewsSourceCfg] = Field(default_factory=list)
+
+
 class PlpConfig(BaseModel):
     llm: LLMConfig = Field(default_factory=LLMConfig)
     timezone: str = ""
@@ -66,6 +83,7 @@ class PlpConfig(BaseModel):
     plugins: PluginsConfig = Field(default_factory=PluginsConfig)
     schedules: dict[str, str] = Field(default_factory=dict)
     features: FeaturesConfig = Field(default_factory=FeaturesConfig)
+    news: NewsConfig = Field(default_factory=NewsConfig)
     # Set by load_config(): the project root (<root>/config/plp.yaml).
     root: Path = Field(default=Path("."))
 

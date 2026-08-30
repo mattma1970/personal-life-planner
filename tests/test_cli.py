@@ -10,7 +10,7 @@ import pytest
 from plp.cli import main
 
 DEMO_PLUGIN = '''
-from plp.kernel.plugin import Job, Plugin, tool
+from plp.kernel.plugin import Command, Job, Plugin, tool
 
 class DemoPlugin(Plugin):
     name = "demo"
@@ -42,6 +42,15 @@ class DemoPlugin(Plugin):
                 staleness_h=1, timeout_s=10),
             Job(name="demo.hello", cron="0 9 * * 1", handler=hello),
         ]
+
+    def commands(self):
+        def demo_cmd(a, ctx):
+            print("demo command works")
+            return 0
+        c = Command(name="demo", help="demo of plugin-provided commands",
+                    handler=demo_cmd)
+        c.add_arguments = lambda p: p.add_argument("--flag", action="store_true")
+        return [c]
 '''
 
 FAILING_PLUGIN = '''
@@ -110,6 +119,19 @@ def test_cli_runs_shows_audit(cfg_path, capsys):
     assert rc == 0
     assert "demo.hello" in out
     assert "ok" in out
+
+
+def test_cli_plugin_command(cfg_path, capsys):
+    rc = main(["--config", str(cfg_path), "demo", "--flag"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "demo command works" in out
+
+
+def test_cli_unknown_command_rejected(cfg_path, capsys):
+    with pytest.raises(SystemExit) as excinfo:
+        main(["--config", str(cfg_path), "frobnicate"])
+    assert excinfo.value.code == 2  # argparse "invalid choice"
 
 
 def test_cli_run_unknown_job(cfg_path, capsys):
