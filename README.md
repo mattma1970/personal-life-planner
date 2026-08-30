@@ -50,7 +50,7 @@ Kernel demo (propose → approve):
 | 0 | Scaffolding (repo, config, CLI stub) | ✅ done |
 | 1 | Kernel core (scheduler, registries, daemon) | ✅ done — two plugins boot, cron fires and audits, failing plugin isolated |
 | 2 | News + daily digest | ✅ done — 8 sources (RSS + HTML newsroom), dedupe + scoring, LLM-seasoned digest with one suggested action |
-| 3 | Vault + gifts + travel | pending |
+| 3 | Vault + gifts + travel | ✅ done — vault (FTS, human-wins), gift lifecycle + Sunday review, travel brainstorm (LLM-seasoned or deterministic) |
 | 4 | Calendar steward (ICS now, Google later) | pending |
 | 5 | Scorecard + weekly checkup | pending |
 | 6 | Email scanner (Gmail) | pending |

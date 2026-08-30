@@ -1,6 +1,6 @@
 # PersonalLifePlanner (PLP) — Product Requirements & Architecture
 
-**Status:** v1.0 — workshop complete, direction approved · build: Phase 2 done (2026-08-30) — news collect (8 sources) + daily digest with LLM seasoning and a deterministic degraded mode
+**Status:** v1.0 — workshop complete, direction approved · build: Phase 3 done (2026-08-30) — vault store (markdown + frontmatter, atomic writes, FTS, human-wins) + gifts (CLI lifecycle, Sunday review) + travel (preferences, LLM-seasoned brainstorm, plan lifecycle); live LLM seasoning verified on CPU Qwen3.8-27B (digest + travel) · next: Phase 4 calendar steward
 **Location:** `/home/mattma/PersonalLifePlanner`
 **Stack:** Python 3.12 · local-first · self-hosted LLM (Qwen 3.8 27B, OpenAI-compatible endpoint)
 

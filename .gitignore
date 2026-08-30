@@ -17,3 +17,4 @@ plp-vault/.plp.lock
 plp-vault/.*.tmp
 *.swp
 *.swo
+config/plp-cpu.yaml
