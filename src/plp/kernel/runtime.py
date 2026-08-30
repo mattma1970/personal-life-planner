@@ -81,6 +81,8 @@ def build_runtime(config: PlpConfig, *, load_plugins: bool = True) -> Runtime:
             capability=Capability.permissive(config.llm.max_tool_steps),
             approvals=approvals,
             host=host,
+            tools=tools,
+            agent=agent,
             job_name=row["name"],
             args=args,
         )

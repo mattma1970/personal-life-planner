@@ -121,9 +121,26 @@ class CalendarConfig(BaseModel):
 
     backend: str = "ics"  # ics | google
     ics_file: str = "data/calendar/main.ics"
-    week_start: int = Field(default=1, ge=0, le=6)  # 0=Sun … 6=Sat (1=Mon default)
+    week_start: int = Field(default=0, ge=0, le=6)  # 0=Monday … 6=Sunday (Python weekday)
     categories: list[str] = Field(default_factory=list)  # suggested labels (informational)
     google: GoogleCalendarCfg = Field(default_factory=GoogleCalendarCfg)
+
+
+class ScorecardConfig(BaseModel):
+    """Life scorecard + weekly checkup (Phase 5). Goals live in the vault
+    (``goals_file``); the scorecard time series live in the state DB. The
+    checkup's cadence defaults to Sunday 20:00 (PRD.md §11)."""
+
+    week_start: int = Field(default=0, ge=0, le=6)  # 0=Monday … 6=Sunday (Python weekday)
+    goals_file: str = "goals.md"  # relative to the vault root
+    checkup_cron: str = "0 20 * * 0"  # Sunday 20:00
+    proposal_max: int = Field(default=3, ge=1, le=5)
+    history_weeks: int = Field(default=26, ge=2, le=156)
+    # Categories ranked most-personal first; the checkup proposes for the
+    # under-targeted goals in this order (work categories last).
+    personal_categories: list[str] = Field(
+        default_factory=lambda: ["wife", "family", "gifts", "travel"]
+    )
 
 
 class PlpConfig(BaseModel):
@@ -139,6 +156,7 @@ class PlpConfig(BaseModel):
     calendar: CalendarConfig = Field(default_factory=CalendarConfig)
     gifts: GiftsConfig = Field(default_factory=GiftsConfig)
     travel: TravelConfig = Field(default_factory=TravelConfig)
+    scorecard: ScorecardConfig = Field(default_factory=ScorecardConfig)
     # Set by load_config(): the project root (<root>/config/plp.yaml).
     root: Path = Field(default=Path("."))
 

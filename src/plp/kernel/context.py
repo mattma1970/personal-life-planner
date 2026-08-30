@@ -12,12 +12,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
+    from .agent import Agent
     from .approvals import Approvals
     from .capability import Capability
     from .config import PlpConfig
     from .delivery import Delivery
     from .host import HostService
     from .bus import EventBus
+    from .registry import ToolRegistry
     from .store import Store
 
 
@@ -30,6 +32,10 @@ class PluginContext:
     capability: "Capability"
     approvals: "Approvals | None" = None
     host: "HostService | None" = None
+    # The runtime's tool registry + bounded agent, so job handlers can run
+    # agent scenarios (e.g. the weekly checkup) against narrow tool mounts.
+    tools: "ToolRegistry | None" = None
+    agent: "Agent | None" = None
     job_name: str | None = None
     args: dict = field(default_factory=dict, repr=False)
 

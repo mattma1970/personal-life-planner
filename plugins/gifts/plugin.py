@@ -18,6 +18,7 @@ editor or Obsidian; a human edit wins over any daemon write (kernel vault).
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import sys
 from pathlib import Path
@@ -86,7 +87,34 @@ class GiftsPlugin(Plugin):
             return {"file": rel, "status": meta["status"],
                     "bought_at": meta.get("bought_at"), "given_at": meta.get("given_at")}
 
-        return [gift_add, gifts_list, gift_set_status]
+        @tool("Upcoming configured occasions (birthdays, anniversaries) within the "
+              "next N days, with how many gifts are still in flight for each. "
+              "Returns a JSON array.")
+        def upcoming(days: int = 90) -> list:
+            today = dt.datetime.now().date()
+            all_gifts = store.list()
+            out = []
+            for occ in self._cfg.occasions:
+                nxt = gifts_mod.next_occurrence(occ.month, occ.day, today, days)
+                if nxt is None:
+                    continue
+                inflight = [
+                    g
+                    for g in all_gifts
+                    if g.get("occasion") == occ.name
+                    and g.get("status") in ("idea", "shortlist")
+                ]
+                out.append(
+                    {
+                        "occasion": occ.name,
+                        "date": nxt.isoformat(),
+                        "in_days": (nxt - today).days,
+                        "in_flight": len(inflight),
+                    }
+                )
+            return out
+
+        return [gift_add, gifts_list, gift_set_status, upcoming]
 
     # ------------------------------------------------------------------ jobs
 

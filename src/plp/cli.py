@@ -120,6 +120,8 @@ def _plugin_command_ctx(rt, name: str):
         capability=Capability.permissive(rt.config.llm.max_tool_steps),
         approvals=rt.approvals,
         host=rt.host,
+        tools=rt.tools,
+        agent=rt.agent,
         job_name=f"cmd.{name}",
     )
 

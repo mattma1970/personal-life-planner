@@ -37,6 +37,7 @@ class Scenario:
     tools: list[str] = field(default_factory=list)  # namespaced tool names
     context_fn: Callable[[PluginContext], str] | None = None
     output_schema: dict | None = None  # JSON Schema the final JSON must satisfy
+    step_budget: int | None = None  # per-scenario guardrail (None = capability default)
 
     def context_text(self, ctx: PluginContext) -> str:
         return self.context_fn(ctx) if self.context_fn else ""
@@ -79,17 +80,29 @@ class Agent:
             messages.append({"role": "system", "content": context_text})
         messages.append({"role": "user", "content": user_message})
         tool_schemas = self.tools.openai_schemas(scenario.tools)
+        budget = scenario.step_budget or capability.step_budget
 
         steps = 0
-        while steps < capability.step_budget:
+        while steps < budget:
             steps += 1
+            last = steps >= budget  # final step: no tools, force the answer
             try:
-                msg = self.llm.chat(messages, tools=tool_schemas or None)
+                msg = self.llm.chat(
+                    messages, tools=None if last else (tool_schemas or None)
+                )
             except LLMUnavailable as exc:
                 return {"ok": False, "degraded": True, "reason": str(exc), "text": ""}
             except LLMError as exc:
                 return {"ok": False, "degraded": True, "reason": str(exc), "text": ""}
 
+            if isinstance(msg, str):  # lenient: some providers return raw text
+                msg = {"content": msg}
+            if last:
+                # A forced final that still emits tool calls: use its text if
+                # any, otherwise the turn ends here (budget exhausted).
+                if not (msg.get("content") or "").strip():
+                    break
+                msg = {"content": msg["content"]}
             tool_calls = msg.get("tool_calls") or []
             if not tool_calls:
                 final_text = msg.get("content") or ""
@@ -118,6 +131,16 @@ class Agent:
                         "content": json.dumps(observation, default=str),
                     }
                 )
+        self._log.warning(
+            "scenario %s: step budget (%d) exhausted without a final answer",
+            scenario.name,
+            budget,
+        )
+        if self.bus:
+            self.bus.publish(
+                f"agent.{scenario.name}.done",
+                {"steps": steps, "exhausted": True},
+            )
         return {
             "ok": False,
             "degraded": True,

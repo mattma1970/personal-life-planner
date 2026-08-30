@@ -62,7 +62,7 @@ news:
 calendar:
   backend: ics
   ics_file: "data/calendar/main.ics"
-  week_start: 1              # 0=Sunday … 6=Saturday (drives `plp calendar week`)
+  week_start: 0              # 0=Monday … 6=Sunday (drives `plp calendar week`)
   categories: []             # suggested labels, e.g. [family, work, health, self, free]
   google:
     enabled: false
@@ -81,6 +81,17 @@ gifts:
 #  occasions:
 #    - {name: "her birthday", month: 6, day: 2}
 #    - {name: "anniversary", month: 7, day: 20}
+
+# Life scorecard + weekly checkup (Phase 5). Goals live in the vault
+# (plp-vault/goals.md — edit it, or `plp scorecard onboarding`); the measured
+# time series live in the state DB. The checkup runs Sunday 20:00 by default.
+scorecard:
+  week_start: 0              # 0=Monday … 6=Sunday
+  goals_file: "goals.md"     # relative to the vault root
+  checkup_cron: "0 20 * * 0" # Sunday 20:00
+  proposal_max: 3            # 2-3 approvable blocks per checkup
+  history_weeks: 26          # trend history kept in the state DB
+  personal_categories: [wife, family, gifts, travel]  # ranked for proposals
 
 # Holiday planner (Phase 3). Preferences live in the vault file below (edit
 # it freely — the LLM reads it when brainstorming). A budget of 0 means no
