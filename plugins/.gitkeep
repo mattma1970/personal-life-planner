@@ -1,0 +1,3 @@
+# Feature plugins live here, one directory each (see PRD.md §6.3):
+#   plugins/<name>/plugin.py  ->  class <Name>Plugin(Plugin)
+# The kernel discovers them at daemon boot; adding a feature never touches kernel code.

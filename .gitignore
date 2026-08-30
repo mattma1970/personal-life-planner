@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.uv-cache/
+
+# personal state & secrets (vault content itself is tracked)
+data/
+config/secrets/
+plp-vault/.obsidian/
+plp-vault/.trash/

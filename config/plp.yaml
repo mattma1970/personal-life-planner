@@ -1,0 +1,43 @@
+# PersonalLifePlanner configuration.
+# Keep this file clean; secrets belong in config/secrets/ (gitignored).
+
+# Self-hosted LLM ("the brain"). Any OpenAI-compatible server works:
+# Ollama -> http://127.0.0.1:11434/v1, vLLM -> http://127.0.0.1:8000/v1, ...
+# If the endpoint is unreachable, PLP runs in degraded (LLM-less) mode.
+llm:
+  base_url: "http://127.0.0.1:11434/v1"
+  model: "qwen3.8-27b"
+  api_key: ""               # optional; most local servers ignore it
+  timeout_seconds: 120
+  max_tool_steps: 8         # step budget per agent turn
+
+# All schedules use this timezone (omit to use the system local timezone).
+timezone: ""
+
+delivery:
+  terminal: true
+  email:
+    enabled: false
+    from: ""
+    to: ""
+    smtp_url: ""            # e.g. smtp://user:pass@smtp.gmail.com:587
+
+vault:
+  path: "plp-vault"         # Obsidian-compatible markdown vault (git-tracked)
+
+state_db:
+  path: "data/plp.db"
+
+plugins:
+  dir: "plugins"
+
+# Per-job schedule overrides (cron, 5 fields). Defaults live in the plugin
+# manifests; anything listed here wins.
+schedules: {}
+#  news.collect: "0 7 * * *"
+#  daily.digest: "5 7 * * *"
+#  checkup.weekly: "0 20 * * 0"
+
+# Delivery of LLM features that are off by default.
+features:
+  email_summarization: false   # let the LLM summarize email threads (off = local-only triage)
