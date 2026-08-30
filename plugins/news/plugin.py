@@ -128,20 +128,27 @@ class NewsPlugin(Plugin):
         ]
 
     def _digest(self, ctx, args: dict) -> dict:
+        from plp.kernel.llm import LLMClient
+
         digest_mod = load_sibling(
             "plp.plugins.news.digest", _HERE / "digest.py"
         )  # deferred: keeps boot light
         cfg = self._news_cfg
+        # The LLM seasons the digest; unreachable → the deterministic skeleton
+        # ships as-is (PRD.md §6.5). The per-run ctx has no LLM handle, so the
+        # client is built from the top-level config here (stateless httpx).
+        llm = LLMClient(ctx.config.llm)  # second arg (logger) is optional
         text = digest_mod.build_digest_text(
             self._store,
             max_items=cfg.digest_max_items,
             window_hours=cfg.digest_window_hours,
-            llm=None,
+            llm=llm,
         )
+        seasoned = "> " in text
         if ctx.delivery is not None:
             ctx.delivery.deliver("digest", text)
         self._store.save_digest("news", text)
-        return {"delivered": text.strip() != "", "chars": len(text)}
+        return {"delivered": text.strip() != "", "seasoned": seasoned, "chars": len(text)}
 
     # ------------------------------------------------------------------ tools
 

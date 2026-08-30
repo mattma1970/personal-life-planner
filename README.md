@@ -21,19 +21,26 @@ scheduled and measurable, and reports back in daily digests and a weekly checkup
 ```bash
 uv venv
 uv pip install -e ".[dev]"        # in this sandbox: UV_CACHE_DIR="$PWD/.uv-cache" uv pip install -e ".[dev]"
-.venv/bin/pytest                  # 67 tests
+.venv/bin/pytest                  # 99 tests
 .venv/bin/plp plugins             # boot report: jobs, tools, plugin state
 .venv/bin/plp daemon              # the daemon (30s tick; system cron only supervises the process)
 ```
 
-Phase-1 demo (try it):
+Phase-2 demo (the daily rhythm — try it):
 
 ```bash
-.venv/bin/plp plugins            # demo ok; demo_fail FAILED (fault isolation)
+.venv/bin/plp run news.collect    # fetch all 8 sources (per-source isolation; one dead feed never blocks)
+.venv/bin/plp run daily.digest    # small digest: top items, source-health line, ONE suggested action
+.venv/bin/plp news                # recent headlines + source health, on demand
+```
+
+Kernel demo (propose → approve):
+
+```bash
 .venv/bin/plp run demo.hello '{"propose": true, "when": "tomorrow 09:00"}'
-.venv/bin/plp runs               # audit trail
-.venv/bin/plp approve 1          # resolve the proposal
-.venv/bin/plp daemon --once      # fires the every-minute heartbeat cron
+.venv/bin/plp runs                # audit trail
+.venv/bin/plp approve 1           # resolve the proposal
+.venv/bin/plp daemon --once       # fires whatever is due (catch-up semantics)
 ```
 
 ## Build status
@@ -42,7 +49,7 @@ Phase-1 demo (try it):
 |---|---|---|
 | 0 | Scaffolding (repo, config, CLI stub) | ✅ done |
 | 1 | Kernel core (scheduler, registries, daemon) | ✅ done — two plugins boot, cron fires and audits, failing plugin isolated |
-| 2 | News + daily digest | pending |
+| 2 | News + daily digest | ✅ done — 8 sources (RSS + HTML newsroom), dedupe + scoring, LLM-seasoned digest with one suggested action |
 | 3 | Vault + gifts + travel | pending |
 | 4 | Calendar steward (ICS now, Google later) | pending |
 | 5 | Scorecard + weekly checkup | pending |

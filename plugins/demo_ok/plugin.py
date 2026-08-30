@@ -1,8 +1,8 @@
 """Sample plugin: exercises the whole kernel pipeline (PRD.md §6.3 template).
 
-Demonstrates at Phase 1 exit:
-- ``demo.heartbeat`` — a cron job that fires every minute (catch-up proves the
-  scheduler ticks; delete or reschedule once real plugins land);
+Demonstrates:
+- ``demo.heartbeat`` — a daily scheduled job (06:00): a minimal standing cron
+  entry (catch-up proves the scheduler ticks; reschedule freely in config);
 - ``demo.hello``     — a job with args that can create an *approval proposal*
   (``plp run demo.hello '{"propose": true}'`` → ``plp approve <id>``);
 - ``demo.echo``      — a ``@tool`` function in the LLM-callable registry.
@@ -63,7 +63,7 @@ class DemoPlugin(Plugin):
             return result
 
         return [
-            Job(name="demo.heartbeat", cron="* * * * *", handler=heartbeat,
-                staleness_h=1, timeout_s=10),
+            Job(name="demo.heartbeat", cron="0 6 * * *", handler=heartbeat,
+                staleness_h=36, timeout_s=10),
             Job(name="demo.hello", cron="0 9 * * 1", handler=hello),
         ]

@@ -517,3 +517,44 @@ def test_digest_llm_seasoning_and_degradation(tmp_path):
 
     text = digest_mod.build_digest_text(p._store, max_items=5, window_hours=48, llm=DeadLLM())
     assert "Model A release" in text
+
+
+class _CapturingDelivery:
+    def __init__(self):
+        self.sent = []
+
+    def deliver(self, kind, text):
+        self.sent.append((kind, text))
+
+
+class _UnavailableLLM:
+    def available(self):
+        return False
+
+    def chat(self, *a, **k):
+        raise AssertionError("chat must not be called when unavailable")
+
+
+def test_digest_job_delivers_and_saves(tmp_path, monkeypatch):
+    import plp.kernel.llm as llm_mod
+
+    monkeypatch.setattr(llm_mod, "LLMClient", lambda *a, **k: _UnavailableLLM())
+    cfg = _cfg(tmp_path)
+    p = plugin_mod.NewsPlugin()
+    ctx = _ctx(tmp_path, cfg)
+    p.setup(ctx)
+    p._store.upsert_articles(
+        "X",
+        [{"url": "http://x/1", "title": "A new model release", "summary": "big",
+          "published_at": utcnow_iso(), "score": 0.9}],
+    )
+    delivery = _CapturingDelivery()
+    ctx.delivery = delivery
+    result = p._digest(ctx, {})
+    assert result["delivered"] is True
+    assert result["seasoned"] is False  # LLM unavailable → deterministic skeleton
+    assert len(delivery.sent) == 1
+    assert delivery.sent[0][0] == "digest"
+    assert delivery.sent[0][1].startswith("News —")
+    (row,) = p._store.query("SELECT content FROM digests WHERE kind = 'news'")
+    assert row["content"].startswith("News —")
