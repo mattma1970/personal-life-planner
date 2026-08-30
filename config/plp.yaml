@@ -65,3 +65,11 @@ gifts:
 #  occasions:
 #    - {name: "her birthday", month: 6, day: 2}
 #    - {name: "anniversary", month: 7, day: 20}
+
+# Holiday planner (Phase 3). Preferences live in the vault file below (edit
+# it freely — the LLM reads it when brainstorming). A budget of 0 means no
+# ceiling was stated.
+travel:
+  max_budget: 0
+  max_trip_days: 14
+  preferences: "travel/preferences.md"

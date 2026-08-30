@@ -33,6 +33,7 @@ class LLMClient:
         self.api_key = cfg.api_key
         self.timeout_s = cfg.timeout_seconds
         self.max_tool_steps = cfg.max_tool_steps
+        self.chat_template_kwargs = dict(cfg.chat_template_kwargs)
         self._log = logger or log
 
     def _headers(self) -> dict:
@@ -68,6 +69,8 @@ class LLMClient:
         if tools:
             body["tools"] = tools
             body["tool_choice"] = "auto"
+        if self.chat_template_kwargs:
+            body["chat_template_kwargs"] = self.chat_template_kwargs
         try:
             r = httpx.post(
                 f"{self.base_url}/chat/completions",

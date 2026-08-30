@@ -120,7 +120,13 @@ class Vault:
         expected_mtime: float | None = None,
     ) -> Path:
         """Atomic write. If ``expected_mtime`` is given and the on-disk file
-        is newer/different, raise :class:`VaultConflict` (human edit wins)."""
+        has a different mtime, raise :class:`VaultConflict` (human edit wins).
+
+        Caveat: the check is mtime-based, so an edit landing in the same
+        clock tick as the caller's read is not visible (ticks here are ~1 ms).
+        Real human edits are orders of magnitude slower than that; if a
+        tighter guarantee is ever needed, compare content hashes too.
+        """
         p = self.root / rel
         if expected_mtime is not None and p.exists():
             actual = p.stat().st_mtime

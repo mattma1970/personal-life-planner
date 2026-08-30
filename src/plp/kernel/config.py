@@ -25,6 +25,10 @@ class LLMConfig(BaseModel):
     api_key: str = ""
     timeout_seconds: float = 120.0
     max_tool_steps: int = 8
+    # Passed through verbatim to the server request body (llama.cpp-specific
+    # knobs such as ``{enable_thinking: false}`` for Qwen3-style templates).
+    # Ignored by servers that don't know the key.
+    chat_template_kwargs: dict[str, object] = Field(default_factory=dict)
 
 
 class EmailDelivery(BaseModel):
@@ -92,6 +96,15 @@ class GiftsConfig(BaseModel):
     occasions: list[OccasionCfg] = Field(default_factory=list)
 
 
+class TravelConfig(BaseModel):
+    """Holiday planner (Phase 3). Plans are vault docs; preferences are a
+    human-edited vault file the brainstorm reads."""
+
+    max_budget: float = Field(default=0.0, ge=0.0)  # 0 = no ceiling stated
+    max_trip_days: int = Field(default=14, ge=1, le=60)
+    preferences: str = "travel/preferences.md"  # relative to the vault root
+
+
 class PlpConfig(BaseModel):
     llm: LLMConfig = Field(default_factory=LLMConfig)
     timezone: str = ""
@@ -103,6 +116,7 @@ class PlpConfig(BaseModel):
     features: FeaturesConfig = Field(default_factory=FeaturesConfig)
     news: NewsConfig = Field(default_factory=NewsConfig)
     gifts: GiftsConfig = Field(default_factory=GiftsConfig)
+    travel: TravelConfig = Field(default_factory=TravelConfig)
     # Set by load_config(): the project root (<root>/config/plp.yaml).
     root: Path = Field(default=Path("."))
 
