@@ -168,11 +168,30 @@ def test_feasibility_warnings(tmp_path):
     assert any("60 days" in x for x in w)          # > 10-day max
     assert any("past" in x for x in w)             # Jan 2026 < today (Aug 2026)
     assert any("ceiling" in x for x in w)          # 9000 > 5000
-    assert any("Phase 4" in x for x in w)          # calendar pending, always
+    assert any("no calendar conflicts" in x for x in w)  # empty calendar (Phase 4)
     w2 = p._feasibility("not-a-date", 100)
     assert any("not understood" in x for x in w2)
     w3 = p._feasibility("2026-09-01..2026-09-05", 100)
-    assert w3 == ["calendar conflict check: pending (calendar plugin lands in Phase 4)"]
+    assert w3 == ["no calendar conflicts for 2026-09-01 → 2026-09-05"]
+
+
+def test_feasibility_calendar_conflict(tmp_path):
+    from datetime import datetime
+
+    from plp.kernel.calendar import CalendarEvent, IcsCalendarStore
+
+    p = _plugin(tmp_path)
+    # _calendar_check opens the plugin's configured store: default ICS path
+    ics = IcsCalendarStore(tmp_path / "data" / "calendar" / "main.ics")
+    ics.create(
+        CalendarEvent(
+            title="Focus block",
+            start=datetime(2026, 9, 2, 9, 0),
+            end=datetime(2026, 9, 2, 10, 0),
+        )
+    )
+    w = p._feasibility("2026-09-01..2026-09-05", 100)
+    assert any("OVERLAPS" in x and "Focus block" in x for x in w)
 
 
 def test_open_questions(tmp_path):

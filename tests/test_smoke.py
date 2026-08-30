@@ -9,6 +9,8 @@ import pytest
 from plp import __version__
 from plp.cli import build_parser, main
 
+# Static parser commands. Since Phase 4, `calendar` is NOT here: the calendar
+# plugin registers its own `calendar` subcommand during discovery.
 ALL_COMMANDS = [
     "daemon",
     "run",
@@ -17,7 +19,6 @@ ALL_COMMANDS = [
     "search",
     "approve",
     "chat",
-    "calendar",
 ]
 
 
@@ -52,5 +53,16 @@ def test_parser_choices():
 def test_stub_commands(capsys):
     assert main(["chat"]) == 0
     assert "phase 5" in capsys.readouterr().out.lower()
-    assert main(["calendar"]) == 0
-    assert "phase 4" in capsys.readouterr().out.lower()
+
+
+def test_calendar_not_in_static_parser():
+    """Phase 4: `calendar` is plugin-registered, so it must NOT be a static
+    choice (static names always win in the wire-up — a static `calendar`
+    would permanently shadow the plugin's)."""
+    p = build_parser()
+    subs = [
+        a
+        for a in p._subparsers._actions
+        if isinstance(a, argparse._SubParsersAction)
+    ][0]
+    assert "calendar" not in subs.choices
