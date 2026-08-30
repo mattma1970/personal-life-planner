@@ -1,6 +1,6 @@
 # PersonalLifePlanner (PLP) — Product Requirements & Architecture
 
-**Status:** v1.0 — workshop complete, direction approved · build: Phase 5 done (2026-08-30) — life scorecard (per-week hours per goal category + vault activity, 26-week trends in the state DB), Sunday 20:00 checkup with deterministic floor + LLM seasoning (narrow 6-tool mount, strict JSON, one retry, forced final answer), data-driven wins/drift and 2–3 approvable calendar proposals (slot nudging around conflicts); `plp scorecard week|checkup|goals|onboarding`, human-editable `goals.md` in the vault; live LLM-seasoned checkup verified on CPU Qwen (4 LLM calls, ~3.6 min, well under the 900 s job timeout); 184 tests green · next: Phase 6 email scanner
+**Status:** v1.0 — workshop complete, direction approved · build: Phase 6 done (2026-08-30) — Gmail read-only OAuth (one-time loopback flow, `plp email connect`; refresh token in a gitignored file), daily 07:00 `email.scan` with deterministic triage (needs-reply / date / RSVP / birthday / life-relevant, configured `life_keywords`), extracted dates → approvable calendar proposals (approve → ICS, audited), opt-in LLM thread summarization that seasons the report only (narrow 1-tool mount, strict JSON, one retry, forced final); graceful no-op without credentials — live-verified (`plp run email.scan` → ok, `no_credentials`); 237 tests green · all v1.0 phases (0–6) complete
 **Location:** `/home/mattma/PersonalLifePlanner`
 **Stack:** Python 3.13 · local-first · self-hosted LLM (Qwen 3.8 27B, OpenAI-compatible endpoint)
 
