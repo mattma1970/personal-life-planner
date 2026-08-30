@@ -1,7 +1,7 @@
 # PersonalLifePlanner (PLP)
 
 A local-first, plugin-based personal assistant: it scans the news and your email,
-keeps the things that matter (your wife, gift-giving, holidays, important work)
+keeps the things that matter (gift-giving, holidays, important work)
 scheduled and measurable, and reports back in daily digests and a weekly checkup.
 
 **Read [`PRD.md`](PRD.md) first** — it is the product and architecture spec.
