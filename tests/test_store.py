@@ -23,7 +23,7 @@ def test_migrations_idempotent(store):
     store.migrate_core()
     store.migrate_core()
     rows = store.query("SELECT version FROM schema_version WHERE ns='core' ORDER BY version")
-    assert [r[0] for r in rows] == [1, 2]
+    assert [r[0] for r in rows] == [1, 2, 3]
 
 
 def test_fts5_available(store):

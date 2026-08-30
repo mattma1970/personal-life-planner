@@ -9,7 +9,16 @@ import pytest
 from plp import __version__
 from plp.cli import build_parser, main
 
-ALL_COMMANDS = ["daemon", "run", "runs", "plugins", "approve", "chat", "calendar"]
+ALL_COMMANDS = [
+    "daemon",
+    "run",
+    "runs",
+    "plugins",
+    "search",
+    "approve",
+    "chat",
+    "calendar",
+]
 
 
 def test_version():

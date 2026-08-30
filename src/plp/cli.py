@@ -4,6 +4,7 @@
     plp run <job> [json-args]                            run a job on demand
     plp runs [--limit N]                                 recent runs (audit)
     plp plugins                                          plugin registry state
+    plp search TEXT [--limit N]                           full-text search the vault
     plp approve <id> [--reject] [--note TEXT]            resolve a proposal
     plp chat                                             (Phase 5 stub)
     plp calendar                                         (Phase 4 stub)
@@ -33,7 +34,16 @@ STUB_PHASES = {
 }
 
 #: Static subcommand names; plugin commands may not shadow these.
-STATIC_COMMANDS = {"daemon", "run", "runs", "plugins", "approve", "chat", "calendar"}
+STATIC_COMMANDS = {
+    "daemon",
+    "run",
+    "runs",
+    "plugins",
+    "search",
+    "approve",
+    "chat",
+    "calendar",
+}
 
 
 def _config_path(args) -> str:
@@ -213,6 +223,22 @@ def _cmd_approve(rt, args) -> int:
     return 0
 
 
+def _cmd_search(rt, args) -> int:
+    from .kernel.config import resolve
+    from .kernel.vault import Vault
+
+    vault = Vault(resolve(rt.config, rt.config.vault.path), rt.store)
+    rows = vault.search(args.text, limit=args.limit)
+    if not rows:
+        print(f"(no vault matches for {args.text!r})")
+        return 0
+    print(f"{len(rows)} vault match(es) for {args.text!r}:")
+    for r in rows:
+        body = r["body"].replace("\n", " ")
+        print(f"  {r['path']}  —  {body[:150].strip()}")
+    return 0
+
+
 def _cmd_stub(args) -> int:
     phase = STUB_PHASES[args.command]
     print(
@@ -257,6 +283,10 @@ def build_parser() -> argparse.ArgumentParser:
     u.add_argument("--limit", type=int, default=20)
 
     sub.add_parser("plugins", help="loaded plugins, their jobs and tools")
+
+    sc = sub.add_parser("search", help="full-text search the vault (markdown tier)")
+    sc.add_argument("text", help="search text")
+    sc.add_argument("--limit", type=int, default=10)
 
     a = sub.add_parser("approve", help="approve (or reject) a pending proposal")
     a.add_argument("id", type=int, help="proposal id (see digests / 'plp runs')")
@@ -320,6 +350,8 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_runs(rt, args)
         if args.command == "plugins":
             return _cmd_plugins(rt, args)
+        if args.command == "search":
+            return _cmd_search(rt, args)
         if args.command == "approve":
             return _cmd_approve(rt, args)
         return _cmd_stub(args)

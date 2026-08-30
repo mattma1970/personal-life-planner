@@ -84,6 +84,18 @@ CORE_MIGRATIONS: list[tuple[int, str]] = [
             updated_at TEXT NOT NULL);
         """,
     ),
+    (
+        3,
+        """
+        -- Vault index bookkeeping (kernel.vault): one row per indexed vault
+        -- file; the mtime+size pair drives the cheap "did it change?" scan.
+        CREATE TABLE IF NOT EXISTS vault_files (
+            path TEXT PRIMARY KEY,
+            mtime REAL NOT NULL,
+            size INTEGER NOT NULL,
+            updated_at TEXT NOT NULL);
+        """,
+    ),
 ]
 
 
