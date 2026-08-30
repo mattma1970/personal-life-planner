@@ -143,6 +143,20 @@ class ScorecardConfig(BaseModel):
     )
 
 
+class EmailConfig(BaseModel):
+    """Email scanner (Phase 6): read-only Gmail triage. ``credentials_file``
+    is the Google OAuth client JSON; ``token_file`` (local, gitignored) holds
+    the refresh token after ``plp email connect``. LLM thread summarization
+    is a separate opt-in flag: ``features.email_summarization``."""
+
+    credentials_file: str = ""  # empty = Gmail not connected → email.scan is a no-op
+    token_file: str = "data/email/token.json"
+    scan_days: int = Field(default=2, ge=1, le=14)  # look-back window per scan
+    scan_cron: str = "0 7 * * *"  # daily 07:00 (PRD.md §11 cadence)
+    max_items: int = Field(default=25, ge=1, le=200)  # per-run fetch cap
+    life_keywords: list[str] = Field(default_factory=list)  # extra life-relevant terms
+
+
 class PlpConfig(BaseModel):
     llm: LLMConfig = Field(default_factory=LLMConfig)
     timezone: str = ""
@@ -157,6 +171,7 @@ class PlpConfig(BaseModel):
     gifts: GiftsConfig = Field(default_factory=GiftsConfig)
     travel: TravelConfig = Field(default_factory=TravelConfig)
     scorecard: ScorecardConfig = Field(default_factory=ScorecardConfig)
+    email: EmailConfig = Field(default_factory=EmailConfig)
     # Set by load_config(): the project root (<root>/config/plp.yaml).
     root: Path = Field(default=Path("."))
 

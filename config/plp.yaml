@@ -93,6 +93,20 @@ scorecard:
   history_weeks: 26          # trend history kept in the state DB
   personal_categories: [wife, family, gifts, travel]  # ranked for proposals
 
+# Email scanner (Phase 6). Read-only Gmail triage, daily: needs-reply flags,
+# date/RSVP/birthday extraction into calendar *proposals*, life-relevant
+# surfacing. Set `credentials_file` to your Google OAuth client JSON
+# (docs/email-gmail-setup.md), then run `plp email connect`. Until then the
+# daily scan is a graceful no-op. LLM thread summarization is the separate
+# opt-in flag under `features` above (off = deterministic triage only).
+email:
+  credentials_file: ""       # e.g. data/email/google_credentials.json (gitignored)
+  token_file: "data/email/token.json"
+  scan_days: 2               # look-back window per scan
+  scan_cron: "0 7 * * *"     # daily 07:00
+  max_items: 25              # per-run fetch cap
+  life_keywords: []          # extra terms to surface (built-in list: wife, family, ...)
+
 # Holiday planner (Phase 3). Preferences live in the vault file below (edit
 # it freely — the LLM reads it when brainstorming). A budget of 0 means no
 # ceiling was stated.
