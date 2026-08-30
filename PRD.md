@@ -1,8 +1,8 @@
 # PersonalLifePlanner (PLP) — Product Requirements & Architecture
 
-**Status:** v1.0 — workshop complete, direction approved · build: Phase 3 done (2026-08-30) — vault store (markdown + frontmatter, atomic writes, FTS, human-wins) + gifts (CLI lifecycle, Sunday review) + travel (preferences, LLM-seasoned brainstorm, plan lifecycle); live LLM seasoning verified on CPU Qwen3.8-27B (digest + travel) · next: Phase 4 calendar steward
+**Status:** v1.0 — workshop complete, direction approved · build: Phase 4 done (2026-08-30) — calendar spine: ICS backend (RFC 5545 subset, human edits survive daemon writes), Google OAuth scaffold (inert until configured, ICS fallback), propose→approve→ICS audited end-to-end, `plp calendar week|add|rm|connect`; travel feasibility now conflict-checks the calendar; 159 tests green · next: Phase 5 scorecard + weekly checkup
 **Location:** `/home/mattma/PersonalLifePlanner`
-**Stack:** Python 3.12 · local-first · self-hosted LLM (Qwen 3.8 27B, OpenAI-compatible endpoint)
+**Stack:** Python 3.13 · local-first · self-hosted LLM (Qwen 3.8 27B, OpenAI-compatible endpoint)
 
 ---
 
@@ -186,7 +186,7 @@ The sandbox is not a later subsystem; it is the **default-deny policy of an auth
 
 ## 11. Decisions & defaults (approved in workshop)
 
-- **Language:** Python 3.12.
+- **Language:** Python 3.13.
 - **LLM:** self-hosted Qwen 3.8 27B via an OpenAI-compatible endpoint (`config/plp.yaml`: `llm.base_url`, `llm.model`).
 - **Cadences:** daily 07:00 collect / 07:05 digest; checkup Sunday 20:00 — all overridable in config.
 - **Email scope:** triage + date/RSVP/birthday extraction; LLM thread summarization **off** by default (opt-in flag).
