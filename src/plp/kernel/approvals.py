@@ -41,8 +41,13 @@ class Approvals:
         return self.store.get_approval(aid)
 
     def resolve(self, aid: int, approved: bool, note: str | None = None) -> bool:
-        """Approve or reject a pending proposal. False if not found/not pending."""
+        """Approve or reject a pending proposal. False if not found/not pending.
+        The bus event is published only on a real state change — re-resolving
+        an already-resolved id must not re-trigger side effects (Phase 4:
+        an approval event drives the calendar write)."""
         ok = self.store.resolve_approval(aid, approved, note)
+        if not ok:
+            return False
         event = "approved" if approved else "rejected"
         self.bus.publish(f"approval.{aid}.{event}", {"id": aid})
         self._log.info("approval #%d %s", aid, event)

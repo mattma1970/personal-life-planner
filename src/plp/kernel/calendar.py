@@ -86,6 +86,13 @@ class CalendarEvent:
         return self.start < end and self.end > start
 
 
+def _as_dt(v: datetime | date) -> datetime:
+    """Normalize a (possibly date-only) window bound to midnight datetimes."""
+    if isinstance(v, date) and not isinstance(v, datetime):
+        return datetime.combine(v, time(0, 0))
+    return v
+
+
 # --------------------------------------------------------------------------
 # ICS codec (RFC 5545 subset)
 # --------------------------------------------------------------------------
@@ -307,6 +314,7 @@ class _IcsLock:
 
     def __enter__(self) -> "_IcsLock":
         if self._fd is None:
+            self._path.parent.mkdir(parents=True, exist_ok=True)
             self._fd = os.open(self._path, os.O_RDWR | os.O_CREAT, 0o644)
             fcntl.flock(self._fd, fcntl.LOCK_EX)
         self._depth += 1
@@ -366,6 +374,7 @@ class IcsCalendarStore(CalendarStore):
     # --------------------------------------------------------------- API
 
     def list(self, start, end, category=None):
+        start, end = _as_dt(start), _as_dt(end)
         out = [e for e in self._read() if e.overlaps(start, end)]
         if category:
             out = [e for e in out if e.category == category]
@@ -452,11 +461,9 @@ class GoogleCalendarStore(CalendarStore):
     def __init__(
         self,
         credentials_path: Path | None,
-        token_path: Path,
         logger: logging.Logger | None = None,
     ) -> None:
         self.credentials_path = credentials_path
-        self.token_path = token_path
         self._log = logger or log
         self._creds: dict = {}
         self._access_token: str | None = None
@@ -468,7 +475,11 @@ class GoogleCalendarStore(CalendarStore):
             raise GoogleNotConfigured(
                 f"credentials file {self.credentials_path} not found (setup doc, step 4)"
             )
+        # Accept both the flat file connect_google writes and the raw GCP
+        # OAuth client export (client keys nested under "installed").
         self._creds = json.loads(self.credentials_path.read_text())
+        if "installed" in self._creds and isinstance(self._creds["installed"], dict):
+            self._creds = {**self._creds, **self._creds["installed"]}
         for key in ("client_id", "client_secret", "refresh_token", "calendar_id"):
             if not self._creds.get(key):
                 raise GoogleNotConfigured(f"missing {key!r} in credentials file (setup doc, step 4)")
@@ -634,7 +645,6 @@ def open_calendar_store(config: PlpConfig, logger: logging.Logger | None = None)
                 resolve(config, cal.google.credentials_file)
                 if cal.google.credentials_file
                 else None,
-                resolve(config, cal.google.token_file),
                 logger,
             )
             store._ensure_configured()

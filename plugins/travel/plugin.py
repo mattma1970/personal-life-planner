@@ -20,7 +20,7 @@ import json
 import logging
 import re
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
 from plp.kernel.llm import LLMClient
@@ -127,13 +127,36 @@ class TravelPlugin(Plugin):
                 out.append(f"start date {start} is in the past")
         if cfg.max_budget > 0 and budget is not None and budget > 0 and budget > cfg.max_budget:
             out.append(f"budget ${budget:g} is above the stated ceiling of ${cfg.max_budget:g}")
-        out.append("calendar conflict check: pending (calendar plugin lands in Phase 4)")
+        out.append(self._calendar_check(parsed))
         return out
+
+    def _calendar_check(self, parsed) -> str:
+        """Real overlap check against the calendar spine (Phase 4). A failed
+        check degrades to a note — feasibility is warnings-only, never blocks."""
+        if not parsed:
+            return "no dates given — conflict check skipped (re-run with --dates to check the calendar)"
+        start_d, end_d, _ = parsed
+        try:
+            from plp.kernel.calendar import open_calendar_store
+
+            store = open_calendar_store(self._ctx.config, log)
+            s = datetime.combine(start_d, time(0, 0))
+            e = datetime.combine(end_d, time(0, 0)) + timedelta(days=1)
+            hits = store.conflicts(s, e)
+        except Exception as exc:  # calendar down → warn, don't block the doc
+            return f"calendar conflict check unavailable ({exc})"
+        if hits:
+            shown = "; ".join(
+                f"{h.title!r} ({h.start:%Y-%m-%d %H:%M})" for h in hits[:5]
+            )
+            more = f" (+{len(hits) - 5} more)" if len(hits) > 5 else ""
+            return f"OVERLAPS existing calendar events: {shown}{more}"
+        return f"no calendar conflicts for {start_d} → {end_d}"
 
     def _open_questions(self, dates: str | None, budget: float | None, seasoned: bool) -> list[str]:
         q = []
         if not dates:
-            q.append("Which weeks are actually free? (calendar check lands in Phase 4)")
+            q.append("Which weeks are actually free? (add --dates so the brainstorm can check your calendar)")
         if not budget or budget <= 0:
             q.append("What's the budget ceiling for this trip?")
         if not seasoned:

@@ -46,6 +46,10 @@ def discover(
     bus: "EventBus",
     config: "PlpConfig",
     logger: logging.Logger | None = None,
+    *,
+    delivery=None,
+    approvals=None,
+    host=None,
 ) -> tuple[list[LoadedPlugin], list[dict]]:
     """Discover, set up, and collect all plugins under ``plugins_dir``.
 
@@ -74,12 +78,16 @@ def discover(
                 )
             seen.add(plugin.name)
 
+            # Full service handles: setup() is where plugins subscribe to bus
+            # events and register host executors, which need approvals/host.
             ctx = PluginContext(
                 store=store,
                 bus=bus,
                 config=config,
-                delivery=None,
+                delivery=delivery,
                 capability=Capability.permissive(),
+                approvals=approvals,
+                host=host,
                 job_name=None,
             )
             plugin.setup(ctx)  # may raise → isolated below

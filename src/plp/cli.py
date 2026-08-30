@@ -7,12 +7,13 @@
     plp search TEXT [--limit N]                           full-text search the vault
     plp approve <id> [--reject] [--note TEXT]            resolve a proposal
     plp chat                                             (Phase 5 stub)
-    plp calendar                                         (Phase 4 stub)
+    plp calendar week|add|rm|connect                     calendar steward (plugin)
 
 Plugins may register their own commands (``Plugin.commands``), surfaced as
-extra subcommands after discovery — e.g. ``plp news`` from the news plugin.
-A plugin command never shadows a static one; static stubs win until the real
-feature lands in its build phase.
+extra subcommands after discovery — e.g. ``plp news`` from the news plugin
+and ``plp calendar`` from the calendar plugin. A plugin command never
+shadows a static one; static stubs win until the real feature lands in its
+build phase (calendar's real command landed in Phase 4).
 """
 
 from __future__ import annotations
@@ -30,7 +31,6 @@ from .kernel.runtime import build_runtime
 
 STUB_PHASES = {
     "chat": 5,
-    "calendar": 4,
 }
 
 #: Static subcommand names; plugin commands may not shadow these.
@@ -42,7 +42,6 @@ STATIC_COMMANDS = {
     "search",
     "approve",
     "chat",
-    "calendar",
 }
 
 
@@ -294,7 +293,6 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--note", default=None, help="resolution note")
 
     sub.add_parser("chat", help="talk to the assistant (Phase 5)")
-    sub.add_parser("calendar", help="calendar operations (Phase 4)")
     return p
 
 

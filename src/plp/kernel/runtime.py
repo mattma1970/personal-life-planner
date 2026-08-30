@@ -59,7 +59,14 @@ def build_runtime(config: PlpConfig, *, load_plugins: bool = True) -> Runtime:
     failures: list[dict] = []
     if load_plugins:
         plugins, failures = discover(
-            resolve(config, config.plugins.dir), store, bus, config, logger
+            resolve(config, config.plugins.dir),
+            store,
+            bus,
+            config,
+            logger,
+            delivery=delivery,
+            approvals=approvals,
+            host=host,
         )
         for lp in plugins:
             for t in lp.tools:
