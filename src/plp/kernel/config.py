@@ -105,6 +105,27 @@ class TravelConfig(BaseModel):
     preferences: str = "travel/preferences.md"  # relative to the vault root
 
 
+class GoogleCalendarCfg(BaseModel):
+    """Google backend (Phase-4 scaffold). Inert until the owner completes
+    docs/google-calendar-setup.md and flips ``enabled`` — then a missing
+    credentials file falls back to ICS with a warning, never a failure."""
+
+    enabled: bool = False
+    credentials_file: str = ""  # JSON: client_id, client_secret, refresh_token, calendar_id
+    token_file: str = "data/calendar/google-token.json"
+
+
+class CalendarConfig(BaseModel):
+    """Calendar spine (PRD.md §1). Backend is the ICS file now, the Google
+    scaffold when enabled; ``week_start`` drives ``plp calendar week``."""
+
+    backend: str = "ics"  # ics | google
+    ics_file: str = "data/calendar/main.ics"
+    week_start: int = Field(default=1, ge=0, le=6)  # 0=Sun … 6=Sat (1=Mon default)
+    categories: list[str] = Field(default_factory=list)  # suggested labels (informational)
+    google: GoogleCalendarCfg = Field(default_factory=GoogleCalendarCfg)
+
+
 class PlpConfig(BaseModel):
     llm: LLMConfig = Field(default_factory=LLMConfig)
     timezone: str = ""
@@ -115,6 +136,7 @@ class PlpConfig(BaseModel):
     schedules: dict[str, str] = Field(default_factory=dict)
     features: FeaturesConfig = Field(default_factory=FeaturesConfig)
     news: NewsConfig = Field(default_factory=NewsConfig)
+    calendar: CalendarConfig = Field(default_factory=CalendarConfig)
     gifts: GiftsConfig = Field(default_factory=GiftsConfig)
     travel: TravelConfig = Field(default_factory=TravelConfig)
     # Set by load_config(): the project root (<root>/config/plp.yaml).

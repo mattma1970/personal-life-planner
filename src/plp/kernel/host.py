@@ -2,18 +2,20 @@
 
 No plugin or model turn touches the host directly: every privileged effect
 goes through this service, which (1) checks the caller's ``Capability``,
-(2) records the call in the audit stream, and (3) publishes an event.
+(2) records the call in the audit stream, (3) publishes an event, and (4)
+dispatches to the registered executor for that action — or records the call
+without an effect if none is registered yet.
 
-v1 semantics: actions are **logged stubs** — the authorization and audit
-machinery is real, the side effects land with the plugin that actually needs
-them (calendar write in Phase 4, mail send in Phase 2/6).
+Executors are attached by the plugin that owns the side effect
+(calendar write lands in Phase 4; mail send later). A misbehaving executor
+is isolated: its error becomes a receipt, never a crash for the caller.
 """
 
 from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable
 
 from .capability import Capability
 from .util import utcnow_iso
@@ -47,9 +49,23 @@ class HostService:
         self.store = store
         self.bus = bus
         self._log = logger or log
+        self._executors: dict[str, Callable[..., dict[str, Any]]] = {}
+
+    def register(self, action: str, executor: Callable[..., dict[str, Any]]) -> None:
+        """Attach the executor for a known privileged action (idempotent;
+        a later registration replaces the previous one — last plugin wins)."""
+        if action not in ACTIONS:
+            raise HostError(f"cannot register executor for unknown host action {action!r}")
+        self._executors[action] = executor
+        self._log.info("host: executor registered for %r", action)
 
     def call(self, action: str, capability: Capability, **kwargs) -> dict:
-        """Authorize, audit, and (v1) record a host effect."""
+        """Authorize, audit, and dispatch a host effect.
+
+        Raises :class:`HostError` when the capability denies the action;
+        otherwise returns a receipt dict (``status`` is ``ok``/``error``
+        when an executor ran, ``recorded`` when none was attached).
+        """
         if action not in ACTIONS:
             raise HostError(f"unknown host action {action!r}; known: {sorted(ACTIONS)}")
         if not capability.can_host_action(action):
@@ -60,6 +76,15 @@ class HostService:
             " VALUES (?, ?, 'ok', ?, ?, ?)",
             (f"host.{action}", None, utcnow_iso(), utcnow_iso(), detail),
         )
-        self._log.warning("host action recorded: %s %s", action, detail)
         self.bus.publish(f"host.{action}", kwargs)
-        return {"status": "recorded", "action": action}
+        executor = self._executors.get(action)
+        if executor is None:
+            self._log.warning("host action recorded (no executor yet): %s %s", action, detail)
+            return {"status": "recorded", "action": action, "note": "no executor attached yet"}
+        try:
+            receipt = executor(**kwargs) or {"status": "ok", "action": action}
+        except Exception as exc:  # isolation: executor errors never crash callers
+            self._log.error("host action %s executor failed: %s", action, exc)
+            receipt = {"status": "error", "action": action, "error": str(exc)}
+        self._log.info("host action done: %s -> %s", action, receipt.get("status"))
+        return receipt
