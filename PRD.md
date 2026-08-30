@@ -1,6 +1,6 @@
 # PersonalLifePlanner (PLP) — Product Requirements & Architecture
 
-**Status:** v1.0 — workshop complete, direction approved
+**Status:** v1.0 — workshop complete, direction approved · build: Phase 1 done (2026-08-30)
 **Location:** `/home/mattma/PersonalLifePlanner`
 **Stack:** Python 3.12 · local-first · self-hosted LLM (Qwen 3.8 27B, OpenAI-compatible endpoint)
 

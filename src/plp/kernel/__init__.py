@@ -1,18 +1,72 @@
-"""The PLP kernel — the stable platform plugins run on.
+"""The PLP kernel — the stable, boring center of the system (PRD.md §6.2).
 
-Components (built out across build Phases 1+; see PRD.md §6.2):
+Components:
 
-- ``config``     — load/validate ``config/plp.yaml`` (pydantic models)
-- ``store``      — SQLite (WAL + FTS5): runs, approvals, digests, plugin tables
-- ``bus``        — in-process event bus (job finished/failed, digest sections…)
-- ``scheduler``  — in-daemon cron: per-job lock, timeout, retry, catch-up-on-wake
-- ``plugins``    — discovery: scan ``plugins/``, import, setup(), register
-- ``registry``   — tool registry with JSON schemas derived from type hints
-- ``capability`` — the per-context authority object (sandboxing seam)
-- ``host``       — named, authorized privileged effects (calendar, mail, files)
-- ``agent``      — bounded tool-calling loop over the LLM (ToolExecutor seam)
-- ``llm``        — thin OpenAI-compatible client (self-hosted Qwen 3.8 27B)
-- ``digest``     — digest assembly from plugin-contributed sections
-- ``delivery``   — pluggable sinks (terminal, email)
-- ``approvals``  — proposal state machine: pending → approved/rejected/expired
+- ``config``      typed YAML configuration (validated, paths resolved)
+- ``store``       SQLite (WAL + FTS5) machine-first tier, numbered migrations
+- ``bus``         in-process event bus (isolated subscribers)
+- ``scheduler``   in-daemon cron: ticks, due-logic, catch-up, coalesce,
+                  supervised execution (timeout / retry / audit)
+- ``discovery``   plugin discovery with per-plugin fault isolation
+- ``registry``    ``@tool`` decorator + JSON-schema derivation + registry
+- ``capability``  per-execution authority object (the sandboxing seam)
+- ``context``     ``PluginContext`` — what setup/jobs/tools may touch
+- ``llm``         thin OpenAI-compatible client for the self-hosted LLM
+- ``agent``       bounded tool-calling runtime with structured output
+- ``approvals``   propose/approve/reject/expire state machine
+- ``host``        named, authorized host effects (audited)
+- ``delivery``    terminal (later: email) sinks
+- ``runtime``     ``build_runtime`` — assembles all of the above
 """
+
+from .agent import Agent, Scenario
+from .approvals import Approvals
+from .bus import EventBus
+from .capability import Capability
+from .config import ConfigError, LLMConfig, PlpConfig, load_config, resolve
+from .context import PluginContext
+from .delivery import Delivery
+from .discovery import LoadedPlugin, PluginLoadError, discover
+from .host import HostError, HostService
+from .llm import LLMClient, LLMError, LLMUnavailable
+from .plugin import Command, Job, Plugin
+from .registry import Tool, ToolError, ToolRegistry, derive_schema, tool
+from .runtime import Runtime, build_runtime
+from .scheduler import JobNotFoundError, Scheduler
+from .store import Store
+
+__all__ = [
+    "Agent",
+    "Scenario",
+    "Approvals",
+    "EventBus",
+    "Capability",
+    "ConfigError",
+    "LLMConfig",
+    "PlpConfig",
+    "load_config",
+    "resolve",
+    "PluginContext",
+    "Delivery",
+    "LoadedPlugin",
+    "PluginLoadError",
+    "discover",
+    "HostError",
+    "HostService",
+    "LLMClient",
+    "LLMError",
+    "LLMUnavailable",
+    "Command",
+    "Job",
+    "Plugin",
+    "Tool",
+    "ToolError",
+    "ToolRegistry",
+    "derive_schema",
+    "tool",
+    "Runtime",
+    "build_runtime",
+    "JobNotFoundError",
+    "Scheduler",
+    "Store",
+]

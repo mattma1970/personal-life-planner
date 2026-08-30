@@ -13,3 +13,5 @@ data/
 config/secrets/
 plp-vault/.obsidian/
 plp-vault/.trash/
+*.swp
+*.swo
