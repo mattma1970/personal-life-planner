@@ -107,12 +107,12 @@ class TravelConfig(BaseModel):
 
 class GoogleCalendarCfg(BaseModel):
     """Google backend (Phase-4 scaffold). Inert until the owner completes
-    docs/google-calendar-setup.md and flips ``enabled`` — then a missing
-    credentials file falls back to ICS with a warning, never a failure."""
+    docs/google-calendar-setup.md and runs ``plp calendar connect`` — then a
+    missing/broken credentials file falls back to ICS with a warning, never
+    a failure."""
 
     enabled: bool = False
-    credentials_file: str = ""  # JSON: client_id, client_secret, refresh_token, calendar_id
-    token_file: str = "data/calendar/google-token.json"
+    credentials_file: str = ""  # JSON: client_id, client_secret[, refresh_token, calendar_id after connect]
 
 
 class CalendarConfig(BaseModel):

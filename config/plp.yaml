@@ -55,6 +55,22 @@ news:
 #  sources:
 #    - {name: "Example Blog", url: "https://example.com/feed", kind: rss, weight: 1.0}
 
+# Calendar spine (Phase 4). The ICS file is human-readable and can be opened
+# in any calendar app; the daemon merges on every write, so edits you make in
+# your calendar tool survive. Google backend: see docs/google-calendar-setup.md
+# (disabled until `enabled: true` + a connected credentials file).
+calendar:
+  backend: ics
+  ics_file: "data/calendar/main.ics"
+  week_start: 1              # 0=Sunday … 6=Saturday (drives `plp calendar week`)
+  categories: []             # suggested labels, e.g. [family, work, health, self, free]
+  google:
+    enabled: false
+    credentials_file: ""     # e.g. data/calendar/credentials.json (gitignored)
+#  google:
+#    enabled: true
+#    credentials_file: "data/calendar/credentials.json"
+
 # Gift vault (Phase 3). Gifts are captured with `plp gift add "..."` and live
 # in plp-vault/gifts/. `occasions` are the recurring dates the Sunday review
 # watches — fill these in (her birthday, your anniversary, ...).
